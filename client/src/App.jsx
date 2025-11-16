@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 
 /* eslint-disable react-hooks/exhaustive-deps */
 
-const socket = io("http://localhost:5000");
+const socket = io("https://watchparty1-m6yv.onrender.com");
 
 export default function App() {
   const playerRef = useRef(null);

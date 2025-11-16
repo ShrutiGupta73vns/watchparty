@@ -5,12 +5,14 @@ const cors = require("cors");
 
 const app = express();
 app.use(cors());
+
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: { origin: "*" },
 });
 
+// Global session state
 const session = {
   videoId: "",
   playing: false,
@@ -24,15 +26,32 @@ io.on("connection", (socket) => {
   // Send current state when someone joins
   socket.emit("sync_state", session);
 
-  // Handle user control actions
+  // Handle all control messages
   socket.on("control", ({ type, targetTime, videoId }) => {
     console.log("📨 Received control:", { type, targetTime, videoId });
-    if (videoId) session.videoId = videoId;
-    session.playing = type === "play";
-    session.time = targetTime;
+
+    if (type === "change_video") {
+      // Handle video change explicitly
+      session.videoId = videoId;
+      session.time = 0;
+      session.playing = false;
+
+    } else if (type === "play") {
+      session.playing = true;
+      session.time = targetTime;
+
+      if (videoId) session.videoId = videoId;
+
+    } else if (type === "pause") {
+      session.playing = false;
+      session.time = targetTime;
+
+      if (videoId) session.videoId = videoId;
+    }
+
     session.lastUpdateTs = Date.now();
 
-    console.log("📤 Broadcasting state:", session);
+    console.log("📤 Broadcasting:", { ...session, type });
     io.emit("control_event", { ...session, type });
   });
 });
